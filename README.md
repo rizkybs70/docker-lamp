@@ -1,7 +1,7 @@
 # Docker-Lamp
 *This docker contain a LAMP stack installed from scratch*
 source : https://github.com/j1cs/docker-lamp
-
+Docker : https://github.com/rizkybs70/docker-lamp
 _tested on Intel NUC OS Ubuntu 20.04 LTS_
 
 ### Include
