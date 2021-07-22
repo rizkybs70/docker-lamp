@@ -7,7 +7,7 @@ _tested on Intel NUC OS Ubuntu 20.04 LTS_
 ### Include
 * Base Alpine 3.14
 * Apache2
-* Mysql
+* Mariadb
 * PHP 7.3
 * Phpmyadmin 5.1.1
 
