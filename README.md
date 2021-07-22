@@ -5,7 +5,7 @@ Docker : https://github.com/rizkybs70/docker-lamp
 _tested on Intel NUC OS Ubuntu 20.04 LTS_
 
 ### Include
-* Base Alpine 3.14
+* Base Alpine 3.12
 * Apache2
 * Mariadb
 * PHP 7.3
