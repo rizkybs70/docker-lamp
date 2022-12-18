@@ -23,7 +23,7 @@ amd64
 ```
 docker run -d \
   --name=docker-lamp \
-  -e MYSQL_ROOT_PASSWORD=matematika \
+  -e MYSQL_ROOT_PASSWORD=sudirman \
   -p 80:80 \
   -p 3306:3306 \
   -v /root/lamp/website:/var/www/localhost/htdocs \
@@ -35,7 +35,7 @@ arm64
 ```
 docker run -d \
   --name=docker-lamp \
-  -e MYSQL_ROOT_PASSWORD=matematika \
+  -e MYSQL_ROOT_PASSWORD=sudirman \
   -p 80:80 \
   -p 3306:3306 \
   -v /root/lamp/website:/var/www/localhost/htdocs \
@@ -53,7 +53,7 @@ docker build -t docker-lamp .
 ```
 docker run -d \
   --name=docker-lamp \
-  -e MYSQL_ROOT_PASSWORD=matematika \
+  -e MYSQL_ROOT_PASSWORD=sudirman \
   -p 80:80 \
   -p 3306:3306 \
   -v /root/lamp/website:/var/www/localhost/htdocs \
@@ -64,7 +64,7 @@ docker run -d \
 
 ## Customize
 Change password mysql
-MYSQL_ROOT_PASSWORD=```matematika``` 
+MYSQL_ROOT_PASSWORD=```sudirman``` 
 
 Change directory data
 -v ```/root/lamp/website```:/var/www/localhost/htdocs \
@@ -75,7 +75,7 @@ http://ipserver/
 Web Server port ```80```
 Mysql ```3306```
 phpmyadmin http://ipserver/phpmyadmin
-password = matematika
+password = sudirman
 
 
 ```
