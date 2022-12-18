@@ -85,15 +85,11 @@ To use this you need to install mysql/mariadb cli client
 ```
 mysql -uroot -password -h 127.0.0.1
 ```
-
-
 ## Troubleshooting
-
 ### Forbidden error 403 
 ```
 sudo chmod -Rf 755 /path/to/project
 ``` 
-
 ### Error activating InnoDB
 If you get errors about activating InnoDB and you are on Windows or Mac, you
 may be encountering [this
