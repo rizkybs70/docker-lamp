@@ -79,7 +79,6 @@ password = matematika
 
 
 ```
-
 ### Connect to MariaDB
 To use this you need to install mysql/mariadb cli client
 ```
