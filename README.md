@@ -11,8 +11,15 @@ _tested on Intel NUC OS Ubuntu 20.04 LTS_
 * PHP 7.3
 * Phpmyadmin 5.1.1
 
+### Images
+| Architecture  | Images name |
+| ------------- | ------------- |
+| arm64 / armv8  | arm64  |
+| amd64  | amd64  |
+
 
 ### Installation
+amd64
 ```
 docker run -d \
   --name=docker-lamp \
@@ -22,7 +29,19 @@ docker run -d \
   -v /root/lamp/website:/var/www/localhost/htdocs \
   -v /root/lamp/mysql:/var/lib/mysql \
   --restart unless-stopped \
-  rizkybs70/docker-lamp:latest
+  rizkybs70/docker-lamp:amd64
+```
+arm64
+```
+docker run -d \
+  --name=docker-lamp \
+  -e MYSQL_ROOT_PASSWORD=matematika \
+  -p 80:80 \
+  -p 3306:3306 \
+  -v /root/lamp/website:/var/www/localhost/htdocs \
+  -v /root/lamp/mysql:/var/lib/mysql \
+  --restart unless-stopped \
+  rizkybs70/docker-lamp:arm64
 ```
 ### Build own images
 
@@ -45,7 +64,7 @@ docker run -d \
 
 ## Customize
 Change password mysql
-MYSQL_ROOT_PASSWORD=``` matematika``` 
+MYSQL_ROOT_PASSWORD=```matematika``` 
 
 Change directory data
 -v ```/root/lamp/website```:/var/www/localhost/htdocs \
@@ -64,7 +83,7 @@ password = matematika
 ### Connect to MariaDB
 To use this you need to install mysql/mariadb cli client
 ```
-mysql -uroot -ppassword -h 127.0.0.1
+mysql -uroot -password -h 127.0.0.1
 ```
 
 
