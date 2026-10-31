@@ -1,168 +1,120 @@
 # Docker-LAMP
 
-*This Docker image provides a LAMP stack (Linux, Apache, MySQL, PHP) with additional security features, built from scratch on Alpine Linux.*
+Single-container LAMP stack on Alpine Linux: Apache, PHP 8.4, MariaDB and phpMyAdmin in one image, built for small site hosting and homelab use. Website files and the database live in volumes, and Apache access/error logs stream to `docker logs`. Access can optionally be limited to a domain whitelist.
 
-**Source:** Based on [j1cs/docker-lamp](https://github.com/j1cs/docker-lamp) with enhancements:  
-✅ Whitelist domain filtering  
-✅ Multi-architecture support  
-✅ Optimized logging to `docker logs`  
-✅ Persistent data volumes  
+## Current Stack
 
----
+| Component | Version |
+| --- | --- |
+| Alpine Linux | 3.24.3 |
+| PHP | 8.4.27 |
+| Apache | 2.4.69 |
+| MariaDB | 11.8.9 |
+| phpMyAdmin | 5.2.3 |
 
-## 🔥 Features
+These are the tested baseline versions of the current image. Patch versions can move when Alpine packages are updated or when the pinned phpMyAdmin dependencies are refreshed.
 
-- **Base:** Alpine Linux 3.14 (lightweight & secure)  
-- **Web Server:** Apache 2.4 with `mod_rewrite` enabled  
-- **Database:** MariaDB 10.6 (MySQL compatible)  
-- **PHP:** PHP 7.4 with common extensions (mysqli, pdo_mysql, gd, mbstring, xdebug, etc.)  
-- **phpMyAdmin:** 5.2.0 pre-installed  
-- **Domain Whitelist:** Restrict access by domain name(s) – IP and localhost always allowed  
-- **Logging:** Apache access and error logs are sent to `stdout`/`stderr` for easy viewing with `docker logs`  
-- **Multi-arch:** Tested on `amd64`, `ARM64` (e.g., STB Armbian HG680P), and VM environments  
+## Key Features
 
----
+- **Domain whitelist** via `ALLOWED_DOMAIN` (IP addresses and `localhost` are always allowed).
+- **Persistent storage**: website files (`/var/www/localhost/htdocs`) and database (`/var/lib/mysql`) on volumes.
+- **Container logging**: Apache access and error logs to `stdout`/`stderr`, readable with `docker logs`.
+- **PHP extensions**: mysqli, pdo_mysql, pdo_sqlite, gd, intl, mbstring, zip, opcache, apcu, simplexml, xmlreader, xmlwriter, bz2, fileinfo, phar, session, tokenizer, curl, dom, iconv.
+- **phpMyAdmin** 5.2.3 served at `/phpmyadmin/` from the same container.
+- **Healthcheck** on the web server, plus MariaDB datadir auto-initialization and auto-upgrade for existing volumes.
+- **Signal-safe shutdown**: `docker stop` is handled through the whole container lifecycle, including while the database is being initialized or upgraded.
 
-## 🧪 Tested On
+## Quick Start
 
-- Virtual Machine (Ubuntu 20.04)  
-- STB Armbian HG680P (ARM64)  
-- Another ARM64 device  
-- AMD64 (Intel NUC)  
-
----
-
-## 📦 Included Packages
-
-- Apache 2.4  
-- MariaDB 10.6  
-- PHP 7.4  
-- phpMyAdmin 5.2.0  
-- Composer  
-- Xdebug (pre-configured)  
-- Additional PHP extensions:  
-  `ctype`, `curl`, `dom`, `gd`, `iconv`, `intl`, `json`, `mbstring`, `mcrypt`, `mysqli`, `opcache`, `pdo_mysql`, `phar`, `session`, `tokenizer`, `xml`, `zip`, `zlib`  
-
----
-
-## 🚀 Quick Start
-
-### 1. Pull or Build the Image
-
-#### Option A: Pull from Docker Hub
 ```bash
-docker pull rizkybs70/docker-lamp:latest
-```
-
-#### Option B: Build Locally
-```bash
-git clone https://github.com/rizkybs70/docker-lamp
+git clone https://github.com/rizkybs70/docker-lamp.git
 cd docker-lamp
-docker build -t docker-lamp .
+docker build -t docker-lamp:php84 .
 ```
 
-### 2. Run the Container
+The build fetches Alpine packages, the phpMyAdmin release archive, Composer and the phpMyAdmin dependency tree from official sources, so the first build needs internet access and no local vendor folder.
 
 ```bash
 docker run -d \
-  --name=docker-lamp \
-  -e MYSQL_ROOT_PASSWORD=yourpassword \          # Change this!
-  -e ALLOWED_DOMAIN="example.com,test.org" \     # Optional: restrict to these domains
-  -p 80:80 \
-  -p 3306:3306 \
-  -v /path/to/website:/var/www/localhost/htdocs \
-  -v /path/to/mysql-data:/var/lib/mysql \
+  --name docker-lamp \
+  -e MYSQL_ROOT_PASSWORD='***' \
+  -e ALLOWED_DOMAIN='example.com,www.example.com' \
+  -p 8080:80 \
+  -v /srv/lamp/website:/var/www/localhost/htdocs \
+  -v /srv/lamp/mysql:/var/lib/mysql \
+  --stop-timeout 60 \
   --restart unless-stopped \
-  rizkybs70/docker-lamp:latest
+  docker-lamp:php84
 ```
-
-**Explanation of options:**
-- `-e MYSQL_ROOT_PASSWORD=yourpassword` – Set the MySQL root password (required).  
-- `-e ALLOWED_DOMAIN="example.com,test.org"` – Comma‑separated list of allowed domains (optional). If omitted or empty, **no domain restriction** is applied.  
-- `-p 80:80` – Expose HTTP port.  
-- `-p 3306:3306` – Expose MySQL port.  
-- `-v /path/to/website:/var/www/localhost/htdocs` – Mount your website files.  
-- `-v /path/to/mysql-data:/var/lib/mysql` – Persist MySQL data.  
-- `--restart unless-stopped` – Auto‑restart policy.
-
----
-
-## 🔐 Domain Whitelist Feature
-
-The `ALLOWED_DOMAIN` environment variable lets you restrict HTTP access to specific domain names.  
-
-- **Syntax:** Comma‑separated list, e.g. `"example.com,test.org"`. Spaces after commas are ignored.  
-- **Wildcard:** Subdomains are **not** automatically allowed – you must list them explicitly. However, `www` variants are automatically permitted (e.g., if you allow `example.com`, both `example.com` and `www.example.com` are accepted).  
-- **Always allowed:** Direct access via **IP address** (e.g., `http://192.168.1.100`) and **localhost** are always permitted, regardless of the whitelist.  
-- **No restriction:** If `ALLOWED_DOMAIN` is not set or is empty, the container behaves like a normal LAMP stack – all domains are allowed.
-
-**How it works:**  
-The script generates an Apache `RewriteRule` that blocks requests with a `Host` header not matching the allowed domains (or IP/localhost). Blocked requests receive a **403 Forbidden** response.
-
----
-
-## 🔍 Checking Logs
-
-All Apache access and error logs are sent to the container’s `stdout`/`stderr`. View them with:
 
 ```bash
-docker logs docker-lamp
+docker logs -f docker-lamp
 ```
 
-Example access log line:
-```
-192.168.1.10 - - [03/Mar/2026:12:00:00 +0000] "GET /index.php HTTP/1.1" 200 1234 "-" "Mozilla/5.0 ..."
-```
-
----
-
-## 🛠️ Customization
-
-### Change MySQL Root Password
-Simply set `MYSQL_ROOT_PASSWORD` to your desired password.  
-To generate a random password on each start, use `-e MYSQL_RANDOM_ROOT_PASSWORD=yes` – the generated password will be printed in the logs.
-
-### Persistent Data
-- Website files: mount a host directory to `/var/www/localhost/htdocs`
-- MySQL data: mount a host directory to `/var/lib/mysql`
-
-**Important:** Ensure the mounted directories have proper permissions. The container runs Apache as user `apache` (UID 100) and MySQL as user `mysql` (UID 100). If you encounter permission errors, adjust ownership:
-
-```bash
-sudo chown -R 100:100 /path/to/website
-sudo chown -R 100:100 /path/to/mysql-data
+```yaml
+# docker-compose.yml
+services:
+  lamp:
+    image: docker-lamp:php84
+    stop_grace_period: 60s
+    ports:
+      - "8080:80"
+    volumes:
+      - /srv/lamp/website:/var/www/localhost/htdocs
+      - /srv/lamp/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "***"
+      ALLOWED_DOMAIN: "example.com,www.example.com"
 ```
 
----
+Open `http://localhost:8080/` for the website and `http://localhost:8080/phpmyadmin/` for phpMyAdmin. MariaDB is not published to the host by default: only add `-p 3306:3306` when an external client really needs direct database access.
 
-## 🌐 Accessing Services
+`--stop-timeout 60` (compose: `stop_grace_period: 60s`) is a safety margin, not a workaround. A steady-state stop finishes in seconds, but a stop that arrives while MariaDB is still initializing or upgrading a volume lets that work finish before the container exits, and a database flushing dirty pages on slow storage can take longer than Docker's 10 second default.
 
-- **Web server:** `http://<host-ip>`  
-- **phpMyAdmin:** `http://<host-ip>/phpmyadmin` (login with `root` and your MySQL password)  
-- **MySQL from host:**  
-  ```bash
-  mysql -h <host-ip> -P 3306 -u root -p
-  ```
+### Environment variables
 
----
+| Variable | Required | Description |
+| --- | --- | --- |
+| `MYSQL_ROOT_PASSWORD` | yes | MariaDB root password; applied when the data directory is initialized for the first time. |
+| `ALLOWED_DOMAIN` | no | Comma-separated hostname whitelist. Unset or empty allows every hostname. |
+| `PMA_BLOWFISH_SECRET` | no | phpMyAdmin blowfish secret. If unset, one is generated and stored in `/var/lib/phpmyadmin`. |
 
-## 🧹 Cleaning Up
+The image ships no credentials and no host-specific configuration: everything comes from the environment or the mounted volumes.
 
-After building the image, you can free disk space by removing unused build cache:
+### Database upgrade
 
-```bash
-docker builder prune -f
-```
+Migrating an existing `/var/lib/mysql` volume from an older stack (for example MariaDB 10.6 to 11.8) is not covered by the automatic upgrade step. That step only applies in-place upgrades to a datadir already in the format of the running MariaDB series. For a major version jump: stop the old container, take a full backup of both the website volume and a consistent database dump or datadir copy, test the migration on a copy, and only then point the new container at the migrated volume. Never assume an existing datadir is safe to hand to a higher major version without that rehearsal.
 
----
+## Changelog
 
-## 👏 Acknowledgements
+### 2026-10-31 - Security Modernization
 
-Original project by [j1cs/docker-lamp](https://github.com/j1cs/docker-lamp).  
-Modifications for domain whitelist, multi‑arch support, and enhanced logging by [rizkybs70](https://github.com/rizkybs70).
+- Rebased on Alpine 3.24.3 with Apache 2.4.69, PHP 8.4.27 and MariaDB 11.8.9 (Alpine 3.14, PHP 7.4 and MariaDB 10.6 removed).
+- phpMyAdmin updated to 5.2.3, still verified against its published SHA-256 checksum at build time.
+- phpMyAdmin dependency management modernized: dependencies are now resolved during the build from official sources, starting from phpMyAdmin's own locked versions and moving only the packages with known advisories. The manually prepared `pma-vendor/` folder is gone, and the build fails if the resolved tree loses packages or drifts from the pinned versions. The resolved `composer.lock` is shipped in the image so audit tools read the versions that are actually vendored.
+- Refreshed dependencies with known advisories: `twig/twig` 3.30.0, `symfony/cache` 5.4.52, `symfony/expression-language` 5.4.54, `symfony/process` 5.4.51, `paragonie/sodium_compat` 1.24.2, `symfony/deprecation-contracts` 3.7.1.
+- The resolved tree matches the release archive package for package (58 packages), so the runtime dependencies phpMyAdmin ships with stay complete: WebAuthn, TCPDF, Twig, Symfony, BaconQrCode, U2F and the rest.
+- Added the PHP XML (simplexml, xmlreader, xmlwriter) and SQLite (pdo_sqlite) extensions required by phpMyAdmin internals.
+- Improved PHP CLI compatibility: `php` now resolves to `php84`.
+- Removed Xdebug from the image.
+- Hardened PHP runtime settings: `display_errors` off, `expose_php` off, errors to stderr, HTTP-only session cookies, 100M upload/post limits.
+- Added `mod_rewrite`, Apache logging to `stdout`/`stderr`, a container healthcheck and automatic MariaDB datadir upgrade for existing volumes.
+- Improved graceful shutdown: the entrypoint now handles `SIGTERM`/`SIGINT` for the whole lifecycle. A stop request that lands while the datadir is being initialized or a MariaDB upgrade is running no longer gets ignored until the stop grace period expires and the container is killed; that work is allowed to finish and the container then exits cleanly. An intentional stop exits `0` instead of `1`, Apache and MariaDB shut down in order, and no child process is left behind.
+- Validated 2026-10-31 on both architectures: AMD64 built and runtime-tested natively on x86_64, ARM64 cross-built on x86_64 and runtime-tested natively on aarch64. Checks covered versions, PHP extensions, phpMyAdmin HTTP and login page, domain whitelist allow/deny, MariaDB read/write, restart persistence, healthcheck, and repeated start/stop/restart cycles including stops during initialization. Trivy reports no vulnerability on either image, and the dependency tree is identical across both (58 packages, same versions).
 
----
+### Legacy stack (before 2026-10-31)
 
-## 📄 License
+Alpine 3.14, Apache 2.4, PHP 7.4 with Xdebug, MariaDB 10.6, phpMyAdmin 5.2.0.
 
-MIT
+## Architecture Support
+
+| Architecture | Status |
+| --- | --- |
+| `linux/amd64` | Tested natively on x86_64 (built and run on the same architecture). |
+| `linux/arm64` | Tested natively on aarch64. The image is cross-built on an x86_64 host and then imported and run on ARM64 hardware. |
+
+A native ARM64 run proves the image works on the ARM64 host used for testing; it does not guarantee every ARM64 device or kernel is compatible. Older ARM boards, unusual page sizes or restricted kernels can still behave differently and should be tested before being trusted.
+
+## Credits
+
+Based on [j1cs/docker-lamp](https://github.com/j1cs/docker-lamp), with domain whitelisting, `docker logs` friendly logging and persistent volumes added in this fork, plus the 2026 security modernization.
